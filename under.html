@@ -80,6 +80,7 @@ th,td {
             </div>
             <div class="col">
                     <h2>Quartiles Propotion</h2>
+                    <p>[Q1>90%,   90%>Q2>=80%,   80%>Q3>=70%,   70%>Q4]</p>
                     <div id="test3">
                             <div>
                                 <a class='reset' href='javascript:chart3.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
@@ -183,12 +184,12 @@ th,td {
             var subjectGroupbox = subjectDimention.group().reduce(
                 /* callback for when data is added to the current filter results */
                 function (p, v) {
-                    p.push(v.marks / 10);
+                    p.push(v.marks / 100);
                     return p;
                 },
                 /* callback for when data is removed from the current filter results */
                 function (p, v) {
-                    p.splice(p.indexOf(v.marks / 10), 1);
+                    p.splice(p.indexOf(v.marks / 100), 1);
                     return p;
 
                 },
@@ -263,7 +264,9 @@ th,td {
                 .height(180)
                 .controlsUseVisibility(true)
                 .radius(80)
-                .innerRadius(30);
+                .drawPaths(true);
+                
+
             // chart3.render();
 
 
