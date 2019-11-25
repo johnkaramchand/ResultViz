@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/dc@3/dc.css" />
+    <script src="https://unpkg.com/d3@5/dist/d3.js"></script>
+    <script src="https://unpkg.com/crossfilter2@1.4/crossfilter.js"></script>
+    <script src="https://unpkg.com/dc@3/dc.js"></script>
+    <script src="https://rawgit.com/crossfilter/reductio/master/reductio.js"></script>
+    <script src="https://npmcdn.com/universe@latest/universe.js"></script>
+
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/litera/bootstrap.min.css">
+
+    <style>
+        html,
+body {
+    height: 100%;
+}
+
+.container {
+    height: 100%;
+    
+    justify-content: center;
+    align-items: center;
+}
+th,td {
+    width: 500px;
+    text-align: center;
+}
+    </style>
+</head>
+
+<body style="align-items: center;">
+    <div class="container">
+        <div class="jumbotron">
+                <h1>Student Result Analysis</h1>      
+                <p>Derive meaningful insights and analysis of student academic performance</p>
+              </div>
+
+        <div class="row">
+            <div class="col">
+                    <h2>Filter By Student</h2>
+                    <div id="select1">
+                            <div>
+                                <a class='reset' href='javascript:select1.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+                            </div>
+                        </div>
+            </div>
+            <div class="col">
+                    <h2>Filter By Subject</h2>
+                    <div id="select2">
+                            <div>
+                                <a class='reset' href='javascript:select2.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+                            </div>
+                        </div>
+            </div>
+        </div>      
+
+
+        <div class="row">
+            <div class="col">
+                    <h2>Pass/Fail Propotion</h2>
+                    <div id="test">
+                            <div>
+                                <a class='reset' href='javascript:chart.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+                            </div>
+                        </div>
+            </div>
+            <div class="col">
+                    <h2>Quartiles Propotion</h2>
+                    <div id="test3">
+                            <div>
+                                <a class='reset' href='javascript:chart3.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+                            </div>
+                        </div>
+            </div>
+        </div>
+        <h2>Student Comparison</h2>
+    <div id="test1">
+        <div>
+            <a class='reset' href='javascript:chart1.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+        </div>
+    </div>
+    <h2>Subject Average Comparison</h2>
+    <div id="test2">
+        <div>
+            <a class='reset' href='javascript:chart2.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+        </div>
+    </div>
+    <h2>Subject Based Analysis</h2>
+    <div id="test4">
+        <div>
+            <a class='reset' href='javascript:chart4.filterAll();dc.redrawAll();' style='visibility: hidden;'>reset</a>
+        </div>
+    </div>
+
+
+
+    <div style="clear: both"></div>
+    <div id="datatable" class="table-bordered"></div>
+</div>
+    <script>
+        var chart = dc.pieChart("#test");
+        var chart1 = dc.rowChart("#test1");
+        var chart2 = dc.barChart("#test2");
+        var chart3 = dc.pieChart("#test3");
+        var chart4 = dc.boxPlot("#test4");
+
+        var select1 = dc.selectMenu('#select1'),
+            select2 = dc.selectMenu('#select2'),
+            select3 = dc.selectMenu('#select3'),
+            datatable = dc.dataTable('#datatable');
+        d3.csv("morley3.csv").then(function (experiments) {
+
+
+
+            var ndx = crossfilter(experiments);
+
+            studentDimension = ndx.dimension(function (d) {
+                return d.student;
+            });
+            studentGroup = studentDimension.group();
+
+
+            passDimension = ndx.dimension(function (d) {
+                return d.marks > 45 ? "pass" : "fail";
+            });
+            passGroup = passDimension.group();
+
+
+            subjectDimention = ndx.dimension(function (d) {
+                return d.subject;
+            })
+            var subjectGroup = subjectDimention.group().reduce(
+                /* callback for when data is added to the current filter results */
+                function (p, v) {
+                    p.count += 1;
+                    p.sumIndex += parseInt(v.marks);
+                    return p;
+                },
+                /* callback for when data is removed from the current filter results */
+                function (p, v) {
+                    p.count -= 1;
+                    p.sumIndex -= parseInt(v.marks);
+                    return p;
+                },
+                /* initialize p */
+                function () {
+                    return {
+                        count: 0,
+                        sumIndex: 0,
+                    };
+                }
+            );
+
+
+            quatersDimention = ndx.dimension(function (d) {
+                var m = d.marks;
+                if (m > 90) {
+                    return 'Q1';
+                } else if (m > 80 && m <= 90) {
+                    return 'Q2';
+                } else if (m > 70 && m <= 80) {
+                    return 'Q3';
+                } else {
+                    return 'Q4';
+                }
+            });
+            quatersGroup = quatersDimention.group();
+
+            var subjectGroupbox = subjectDimention.group().reduce(
+                /* callback for when data is added to the current filter results */
+                function (p, v) {
+                    p.push(v.marks / 10);
+                    return p;
+                },
+                /* callback for when data is removed from the current filter results */
+                function (p, v) {
+                    p.splice(p.indexOf(v.marks / 10), 1);
+                    return p;
+
+                },
+                /* initialize p */
+                function () {
+                    return [];
+
+                }
+            );
+
+            function rnd(a) {
+                return a[Math.floor(Math.random() * a.length)];
+            }
+
+            istudentdimention = ndx.dimension(function (d) {
+                return d.student;
+            });
+            isubjectdimention = ndx.dimension(function (d) {
+                return d.subject;
+            });
+            imarksdimention = ndx.dimension(function (d) {
+                return d.marks;
+            });
+            imarksdimention1 = ndx.dimension(function (d) {
+                return d.marks;
+            });
+
+            var data = [],
+                SIZE = 500;
+            for (var i = 1; i < SIZE; i++) {
+                var j = 1;
+                data.push({
+                    student: rnd(experiments[1].student),
+                    subjects: rnd(experiments[1].subject),
+                    marks: rnd(experiments[1].marks)
+                });
+            }
+
+            chart
+                .dimension(passDimension)
+                .group(passGroup)
+                .controlsUseVisibility(true)
+                .width(180)
+                .height(180)
+                .radius(80)
+                .innerRadius(30);
+            //chart.render();
+
+            chart1
+                .dimension(studentDimension)
+                .group(studentGroup)
+                .controlsUseVisibility(true);
+            //chart1.render();
+
+            chart2
+                .dimension(subjectDimention)
+                .group(subjectGroup)
+                .controlsUseVisibility(true)
+                .x(d3.scaleBand())
+                .xUnits(dc.units.ordinal)
+                .valueAccessor(function (p) {
+                    console.log(p.value.sumIndex / p.value.count);
+
+                    return p.value.sumIndex / p.value.count;
+                });
+            //chart2.render();
+
+            chart3
+                .dimension(quatersDimention)
+                .group(quatersGroup)
+                .width(180)
+                .height(180)
+                .controlsUseVisibility(true)
+                .radius(80)
+                .innerRadius(30);
+            // chart3.render();
+
+
+            chart4
+                .dimension(subjectDimention)
+                .group(subjectGroupbox)
+                .controlsUseVisibility(true)
+                .colors("#4286f4");
+
+            //chart4.render();
+
+            select1
+                .dimension(istudentdimention)
+                .group(istudentdimention.group())
+                .controlsUseVisibility(true);
+            select2
+                .dimension(isubjectdimention)
+                .group(isubjectdimention.group())
+                .multiple(true)
+                .numberVisible(10)
+                .controlsUseVisibility(true);
+            select3.dimension(imarksdimention)
+                .group(imarksdimention.group())
+                .multiple(true)
+                .numberVisible(10)
+                .controlsUseVisibility(true);
+            datatable
+                .dimension(imarksdimention1)
+                .columns(['student', 'subject', 'marks'])
+                .size(data.length);
+
+            dc.renderAll();
+
+        });
+    </script>
+    
+</body>
